@@ -29,28 +29,33 @@ function readCsv(string $path) : array {
     return $data;
 }
 
-function readTransactions($directory) {
+function readCsvDiretory(string $directory) : array {
 
     if (!is_dir($directory)) {
         throw new Exception("O diretório não existe");
     }
 
-    $transactions = [];
+    $lines = [];
 
     foreach(scandir($directory) as $file) {
-        if($file === '.' || $file === '..') continue;
+        if ($file === '.' || $file === '..') continue;
 
-        $csvData = readCsv("{$directory}/{$file}");
+        $path = "{$directory}/{$file}";
+
+        if (pathinfo($path)['extension'] !== 'csv') continue;        
+
+        $csvData = readCsv($path);
         
         if (empty($csvData)) continue;        
-        $transactions = array_merge($transactions, $csvData);
+
+        $lines = array_merge($lines, $csvData);
     }
     
-    return $transactions;
+    return $lines;
 }
 
-function processTransactions($path) : array {
-    $transactions = readTransactions($path);
+function processTransactions(string $path) : array {
+    $transactions = readCsvDiretory($path);
 
     $totalIncome = 0;
     $totalExpense = 0;
@@ -62,22 +67,32 @@ function processTransactions($path) : array {
 
         $amount = (float)(str_replace(['$',','],[''],$transaction['Amount']));
 
+        $transaction['Amount'] = $amount;
+
         if ($amount > 0) {
             $totalIncome += $amount;
         } else {
             $totalExpense -= $amount;
         }
-
+        
         return $transaction;
 
     }, $transactions);
 
     return [
         'totalIncome' => round($totalIncome,2),
-        'totalExpense' => round($totalExpense,2),
+        'totalExpense' => round($totalExpense,2) * -1,
         'netTotal' => round($totalIncome - $totalExpense,2),
         'transactions' => $processedTransaction
     ];
+}
+
+function formatMoney(float $amount) : string {
+    $value = abs($amount);
+
+    $value = number_format($value, 2);
+
+    return $amount > 0 ? "\${$value}" : "-\${$value}";
 }
 
 $processed = processTransactions(FILES_PATH);

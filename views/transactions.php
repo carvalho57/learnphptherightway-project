@@ -39,22 +39,24 @@
                     <td><?= $transaction['Date']?></td>
                     <td><?= $transaction['Check #']?></td>
                     <td><?= $transaction['Description']?></td>
-                    <td><?= $transaction['Amount']?></td>
+                    <td style="color: <?=  $transaction['Amount'] > 0 ? 'green' : 'red' ?>;" >
+                        <?= formatMoney($transaction['Amount'])?>
+                    </td>
                    </tr> 
                 <?endforeach?>
             </tbody>
             <tfoot>
                 <tr>
                     <th colspan="3">Total Income:</th>
-                    <td><?= $totalIncome ?></td>
+                    <td><?= formatMoney($totalIncome) ?></td>
                 </tr>
                 <tr>
                     <th colspan="3">Total Expense:</th>
-                    <td><?= $totalExpense ?></td>
+                    <td><?= formatMoney($totalExpense) ?></td>
                 </tr>
                 <tr>
                     <th colspan="3">Net Total:</th>
-                    <td><?= $netTotal ?></td>
+                    <td><?= formatMoney($netTotal) ?></td>
                 </tr>
             </tfoot>
         </table>
