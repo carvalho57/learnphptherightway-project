@@ -36,11 +36,11 @@
             <tbody>
                 <?foreach ($transactions as $transaction):?>
                    <tr>
-                    <td><?= $transaction['Date']?></td>
-                    <td><?= $transaction['Check #']?></td>
-                    <td><?= $transaction['Description']?></td>
-                    <td style="color: <?=  $transaction['Amount'] > 0 ? 'green' : 'red' ?>;" >
-                        <?= formatMoney($transaction['Amount'])?>
+                    <td><?= formatDate($transaction['date'])?></td>
+                    <td><?= $transaction['check']?></td>
+                    <td><?= $transaction['description']?></td>
+                    <td style="color: <?=  $transaction['amount'] > 0 ? 'green' : 'red' ?>;" >
+                        <?= formatMoney($transaction['amount'])?>
                     </td>
                    </tr> 
                 <?endforeach?>

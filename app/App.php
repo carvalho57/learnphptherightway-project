@@ -5,9 +5,9 @@ declare(strict_types = 1);
 
 function readCsv(string $path) : array {
 
-    $data = [];
+    $lines = [];
 
-    if(!file_exists($path) && !is_readable($path)) {
+    if (!file_exists($path) && !is_readable($path)) {
         throw new Exception("Não é possível ler o arquivo");
     }    
 
@@ -17,16 +17,15 @@ function readCsv(string $path) : array {
         throw new Exception("Não foi possível abrir o arquivo");
     }
 
-    $header = fgetcsv($file);
+    fgetcsv($file);
 
-    while(($line = fgetcsv($file)) !== false) {
-        
-        if (!empty($line)) {         
-            $data[] = array_combine($header, $line);            
-        }                
+    while (($line = fgetcsv($file)) !== false) {
+
+        if (empty($line)) continue;
+        $lines[] = $line;
     }
 
-    return $data;
+    return $lines;
 }
 
 function readCsvDiretory(string $directory) : array {
@@ -38,11 +37,11 @@ function readCsvDiretory(string $directory) : array {
     $lines = [];
 
     foreach(scandir($directory) as $file) {
-        if ($file === '.' || $file === '..') continue;
+        if (is_dir($file)) continue;
 
-        $path = "{$directory}/{$file}";
+        $path = $directory . $file;
 
-        if (pathinfo($path)['extension'] !== 'csv') continue;        
+        if (pathinfo($path)['extension'] !== 'csv') continue;
 
         $csvData = readCsv($path);
         
@@ -54,49 +53,52 @@ function readCsvDiretory(string $directory) : array {
     return $lines;
 }
 
-function processTransactions(string $path) : array {
+
+/**
+ * Processa transações e retorna um array associativo com as informações da transação.
+ *
+ * @param string $path O caminho para o arquivo de transações.
+ * @param callable $callback Função que processa cada transação.
+ *
+ * @return array[] Um array associativo contendo informações de transação.
+ *                 Com as seguintes chaveschaves:
+ *                 - date: A data da transação.
+ *                 - check: O número do cheque.
+ *                 - description: A descrição da transação.
+ *                 - amount: O valor da transação.
+ */
+function getTransactions(string $path, callable $handlerTransactions = null) : array {        
+
     $transactions = readCsvDiretory($path);
-
-    $totalIncome = 0;
-    $totalExpense = 0;
-
-    $processedTransaction = array_map(function($transaction) use (&$totalIncome, &$totalExpense) {
-
-        $date = date_create_from_format('m/d/Y',$transaction['Date']);
-        $transaction['Date'] = date_format($date, 'M j,Y');
-
-        $amount = (float)(str_replace(['$',','],[''],$transaction['Amount']));
-
-        $transaction['Amount'] = $amount;
-
-        if ($amount > 0) {
-            $totalIncome += $amount;
-        } else {
-            $totalExpense -= $amount;
-        }
         
-        return $transaction;
+    if($handlerTransactions === null) {
+        return $transactions;
+    }
 
-    }, $transactions);
+    $processedTransaction = array_map($handlerTransactions,$transactions);
 
-    return [
-        'totalIncome' => round($totalIncome,2),
-        'totalExpense' => round($totalExpense,2) * -1,
-        'netTotal' => round($totalIncome - $totalExpense,2),
-        'transactions' => $processedTransaction
+    return $processedTransaction;
+}
+
+function getTotals(array $transactions) : array {
+   
+    $totals = [
+        'totalIncome' => 0,
+        'totalExpense' => 0,
+        'netTotal' => 0      
     ];
+
+    foreach($transactions as $transaction) {
+
+        if ($transaction['amount'] > 0) {
+            $totals['totalIncome'] += $transaction['amount'];
+        } else  {
+            $totals['totalExpense'] += $transaction['amount'];
+        }
+    }
+
+    $totals['netTotal'] = $totals['totalIncome'] + $totals['totalExpense'];
+
+    return $totals;  
 }
 
-function formatMoney(float $amount) : string {
-    $value = abs($amount);
-
-    $value = number_format($value, 2);
-
-    return $amount > 0 ? "\${$value}" : "-\${$value}";
-}
-
-$processed = processTransactions(FILES_PATH);
-
-extract($processed);
-
-include VIEWS_PATH . 'transactions.php';
