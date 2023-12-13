@@ -6,7 +6,6 @@ namespace App\Models;
 
 use App\Model;
 use DateTime;
-use Exception;
 
 class Transaction extends Model
 {
@@ -83,31 +82,7 @@ class Transaction extends Model
         }
     }
 
-    public static function processUploadFile(string $path): void
-    {
-        if (!file_exists($path) || !is_readable($path)) {
-            throw new Exception('O arquivo não existe ou não está disponível');
-        }
 
-        if (($handle = fopen($path, 'r')) !== false) {
-            $transactions = [];
-
-            //Remove header
-            fgetcsv($handle);
-
-            while (($data = fgetcsv($handle)) !== false) {
-                $transactions[] = Transaction::create(
-                    DateTime::createFromFormat('d/m/Y', $data[0]),
-                    (string)$data[1],
-                    (string)$data[2],
-                    (float) str_replace(['$', ','], '', $data[3])
-                );
-            }
-
-            $transactionsCollection = new TransactionCollection($transactions);
-            (new Transaction())->saveAll($transactionsCollection);
-        }
-    }
 
     public static function create(DateTime $date, string $check, string $description, float $amount): static
     {

@@ -5,7 +5,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-class ProcessTransaction
+class CalculateTransactionTotals
 {
     private float $totalIncome;
     private float $totalExpenses;
@@ -18,7 +18,8 @@ class ProcessTransaction
         $this->transactions = $transactions;
     }
 
-    public function process(): void
+
+    public function calculate(): void
     {
         /** @var Transaction $transaction */
         foreach ($this->transactions as $transaction) {

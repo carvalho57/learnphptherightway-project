@@ -5,19 +5,25 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\File;
-use App\Models\ProcessTransaction;
+use App\Models\CalculateTransactionTotals;
 use App\Models\Transaction;
+use App\Services\TransactionService;
 use App\View;
 
 class TransactionController
 {
+    private TransactionService $transactionService;
+    public function __construct()
+    {
+        $this->transactionService = new TransactionService();
+    }
     public function index(): View
     {
         $transactions = (new Transaction())->all();
-        $processTransaction = new ProcessTransaction($transactions);
-        $processTransaction->process();
+        $calculateTransactionTotals = new CalculateTransactionTotals($transactions);
+        $calculateTransactionTotals->calculate();
 
-        return View::make('transactions.index', ['processedTransaction' => $processTransaction]);
+        return View::make('transactions.index', ['processedTransaction' => $calculateTransactionTotals]);
     }
 
     public function prepareUpload(): View
@@ -35,7 +41,7 @@ class TransactionController
             }
 
             if (File::isCSV($file['path'])) {
-                Transaction::processUploadFile($file['path']);
+                $this->transactionService->processUploadFile($file['path']);
             }
         }
 
